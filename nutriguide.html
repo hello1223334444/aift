@@ -1,0 +1,349 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NutriGuide Ultimate - 프리미엄 영양제 백과 (Connect Edition)</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Pretendard:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <!-- QR 코드 생성을 위한 라이브러리 추가 -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+    <style>
+        :root {
+          --primary: #3b82f6;
+          --primary-hover: #2563eb;
+          --examinee: #8b5cf6;
+          --bg: #f8fafc;
+          --surface: #ffffff;
+          --text: #0f172a;
+          --text-light: #475569;
+          --border: #e2e8f0;
+          --success: #10b981;
+          --error: #ef4444;
+          --warning: #f59e0b;
+          --dosage-bg: #fefce8;
+          --dosage-text: #854d0e;
+          --coupang: #e11d48;
+          --iherb: #166534;
+          --shadow-sm: 0 1px 3px 0 rgb(0 0 0 / 0.1);
+          --shadow-lg: 0 10px 25px -3px rgb(0 0 0 / 0.1);
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; -webkit-font-smoothing: antialiased; }
+        html { scroll-behavior: smooth; }
+        body { font-family: 'Pretendard', sans-serif; background-color: var(--bg); color: var(--text); line-height: 1.8; }
+        .app { max-width: 1280px; margin: 0 auto; padding: 0 24px; }
+
+        header {
+          position: sticky; top: 0; z-index: 100;
+          display: flex; justify-content: space-between; align-items: center;
+          padding: 18px 0; background: rgba(255, 255, 255, 0.85);
+          backdrop-filter: blur(16px); border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+          margin-bottom: 40px;
+        }
+
+        .logo { font-size: 1.7rem; font-weight: 800; color: var(--primary); display: flex; align-items: center; gap: 10px; cursor: pointer; }
+        nav ul { display: flex; gap: 12px; list-style: none; flex-wrap: wrap; }
+        nav a { font-weight: 700; color: var(--text-light); text-decoration: none; font-size: 0.95rem; cursor: pointer; padding: 10px 18px; border-radius: 12px; transition: all 0.2s; }
+        nav a:hover { background: #f1f5f9; color: var(--text); }
+        nav a.active { background: var(--primary); color: white; }
+        nav a.active-examinee { background: var(--examinee); color: white; }
+        nav a.active-qr { background: #1e293b; color: white; }
+
+        .hero { padding: 80px 0; text-align: center; background: radial-gradient(circle at top right, #eff6ff 0%, #ffffff 60%); margin-bottom: 40px; border-radius: 48px; border: 1px solid #f1f5f9; }
+        .hero h1 { font-size: 3rem; font-weight: 800; margin-bottom: 16px; letter-spacing: -0.05em; line-height: 1.2; }
+        .hero p { font-size: 1.2rem; color: var(--text-light); max-width: 800px; margin: 0 auto; opacity: 0.9; }
+        .hero.examinee-theme { background: radial-gradient(circle at top right, #f5f3ff 0%, #ffffff 60%); }
+        .hero.qr-theme { background: radial-gradient(circle at top right, #f1f5f9 0%, #ffffff 60%); }
+
+        .section-header { text-align: center; margin-bottom: 40px; }
+        .section-header h2 { font-size: 2.2rem; font-weight: 800; margin-bottom: 10px; }
+
+        .supplement-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(380px, 1fr)); gap: 24px; margin-bottom: 80px; }
+        
+        .card { 
+          background: var(--surface); 
+          border: 1px solid var(--border); 
+          border-radius: 28px; 
+          padding: 32px; 
+          box-shadow: var(--shadow-sm); 
+          transition: all 0.3s ease; 
+          position: relative; 
+          cursor: pointer;
+          overflow: hidden;
+        }
+        .card:hover { transform: translateY(-5px); border-color: var(--primary); }
+        .card.active { border-color: var(--primary); box-shadow: var(--shadow-lg); }
+        .card.examinee-card { border-top: 6px solid var(--examinee); }
+
+        .tag { display: inline-flex; padding: 4px 10px; border-radius: 8px; font-size: 0.75rem; font-weight: 800; margin-bottom: 12px; text-transform: uppercase; margin-right: 6px; }
+        .tag-blue { background: #eff6ff; color: var(--primary); }
+        .tag-purple { background: #f5f3ff; color: var(--examinee); }
+
+        .dosage-badge { background: var(--dosage-bg); color: var(--dosage-text); padding: 8px 16px; border-radius: 10px; font-size: 0.85rem; font-weight: 800; margin-bottom: 16px; border: 1px solid #fef08a; display: inline-flex; align-items: center; gap: 6px; }
+        
+        .card h3 { font-size: 1.5rem; font-weight: 800; margin-bottom: 8px; color: var(--text); display: flex; align-items: center; justify-content: space-between; }
+        .card h3::after { content: '펼쳐보기 ⌵'; font-size: 0.8rem; color: var(--primary); font-weight: 600; opacity: 0.7; }
+        .card.active h3::after { content: '접기 ⌃'; }
+
+        .preview-text { color: var(--text-light); font-size: 0.95rem; opacity: 0.8; margin-bottom: 0; }
+        .card.active .preview-text { display: none; }
+
+        .details-content { 
+          max-height: 0; opacity: 0; overflow: hidden; transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1); 
+        }
+        .card.active .details-content { 
+          max-height: 2500px; opacity: 1; padding-top: 20px; margin-top: 20px; border-top: 1px solid #f1f5f9; 
+        }
+
+        .description { color: var(--text-light); font-size: 1rem; margin-bottom: 24px; line-height: 1.7; }
+        .card-inner { margin-bottom: 24px; }
+        .card-inner h4 { font-size: 1rem; font-weight: 800; margin-bottom: 12px; color: var(--text); }
+        .list-item { list-style: none; position: relative; padding-left: 24px; margin-bottom: 8px; font-size: 0.95rem; }
+        .pros::before { content: '✓'; position: absolute; left: 0; color: var(--success); font-weight: 900; }
+        .cons::before { content: '✕'; position: absolute; left: 0; color: var(--error); font-weight: 900; }
+
+        .info-box { background: #f8fafc; padding: 14px 20px; border-radius: 14px; font-size: 0.9rem; font-weight: 700; color: var(--text); margin-top: 8px; }
+        .caution-box { background: #fff1f2; color: #991b1b; padding: 20px; border-radius: 16px; margin-top: 20px; font-size: 0.9rem; border: 1px solid #fecaca; }
+
+        .product-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 16px; margin-top: 16px; }
+        .product-card { background: #fbfcfd; border: 1px solid var(--border); border-radius: 18px; padding: 20px; display: flex; flex-direction: column; transition: 0.2s; }
+        .product-name { font-size: 1rem; font-weight: 800; margin: 4px 0 16px 0; flex-grow: 1; }
+        .buy-buttons { display: flex; gap: 8px; }
+        .btn { flex: 1; padding: 10px; border-radius: 10px; font-weight: 800; text-align: center; text-decoration: none; color: white; font-size: 0.75rem; cursor: pointer; border: none; }
+        .btn-cp { background: var(--coupang); }
+        .btn-ih { background: var(--iherb); }
+
+        /* QR Tab Specific */
+        .qr-container { background: white; border-radius: 40px; padding: 60px; text-align: center; box-shadow: var(--shadow-sm); border: 1px solid var(--border); max-width: 800px; margin: 0 auto; }
+        #qrcode { display: flex; justify-content: center; margin: 40px 0; }
+        .qr-url { background: #f1f5f9; padding: 12px 24px; border-radius: 12px; font-family: monospace; font-weight: 600; color: var(--primary); word-break: break-all; margin-top: 20px; }
+
+        .combo-container { display: grid; grid-template-columns: repeat(auto-fit, minmax(500px, 1fr)); gap: 24px; }
+        .combo-box { padding: 40px; border-radius: 36px; background: white; border: 1px solid var(--border); }
+        .combo-item { margin-bottom: 16px; padding: 20px; background: #fbfcfd; border-radius: 18px; border-left: 5px solid #eee; }
+        .syn-item { border-left-color: var(--success); }
+        .con-item { border-left-color: var(--error); }
+
+        footer { text-align: center; padding: 100px 0; border-top: 1px solid var(--border); color: var(--text-light); font-size: 0.9rem; }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState, useEffect } = React;
+
+        const allSupplements = [
+          { id: 'multi', name: '종합비타민', category: 'Foundation', icon: '🍎', dosage: '1일 1회 정량', desc: '현대인의 불규칙한 식습관으로 결핍되기 쉬운 필수 비타민과 미네랄을 한 번에 보충하는 기초 중의 기초입니다. 에너지 대사를 활성화하고 전반적인 신체 기능을 정상화하는 역할을 합니다.', pros: ['신체 활력 및 에너지 대사 지원', '영양 불균형 해소 및 면역력 유지', '다양한 미량 영양소의 간편한 섭취'], cons: ['특정 성분의 고함량 섭취가 어려움', '위장 장애가 있을 수 있음'], time: '식사 도중 또는 식후 즉시', products: [{b: 'Thorne Research', n: 'Basic Nutrients 2/Day'}, {b: 'Life Extension', n: 'Two-Per-Day'}] },
+          { id: 'mag', name: '마그네슘', category: 'Relax', icon: '💎', dosage: '200~400mg', desc: '천연의 이완제로 불리며, 300가지 이상의 체내 효소 작용에 관여합니다. 근육의 수축과 이완을 조절하고 신경을 안정시켜 현대인의 만성 피로와 스트레스 관리에 필수적입니다.', pros: ['눈 떨림 및 근육 경련 즉각적 개선', '심리적 안정 및 수면 질 향상', '혈당 대사 및 단백질 합성 지원'], cons: ['산화 마그네슘의 경우 설사 유발 가능성'], time: '저녁 식후 또는 취침 1시간 전', products: [{b: 'Bluebonnet', n: 'Chelated Magnesium'}, {b: 'Doctor\'s Best', n: 'High Absorption'}] },
+          { id: 'omega', name: '오메가3', category: 'Circulation', icon: '🐟', dosage: '1,000~2,000mg', desc: '혈중 중성지방 수치를 조절하고 혈행을 개선하는 필수 지방산입니다. 뇌 세포막의 구성 성분으로 인지 기능과 기억력 유지, 안구 건조 개선에 탁월한 효과를 보입니다.', pros: ['심혈관 질환 예방 및 항염 작용', '기억력 향상 및 두뇌 영양 공급', '안구 건조 및 시력 보호 보조'], cons: ['특유의 생선 비린내 발생 가능', '산패 시 독성 위험'], time: '기름진 식사 직후', products: [{b: 'Sports Research', n: 'Triple Strength'}, {b: 'Nordic Naturals', n: 'Ultimate Omega'}] },
+          { id: 'vitd', name: '비타민 D3', category: 'Immunity', icon: '☀️', dosage: '2,000~5,000 IU', desc: '한국인 결핍율 1위 영양소입니다. 단순한 비타민을 넘어 전신 면역 시스템을 조절하고 칼슘 흡수를 도와 뼈 건강과 우울감 개선에 중추적인 역할을 담당합니다.', pros: ['면역 세포 활성화로 감염 질환 예방', '골밀도 유지 및 골다공증 방지', '항염 작용 및 우울감 개선'], cons: ['지용성으로 체내 축적되므로 과다 섭취 주의'], time: '하루 중 가장 큰 식사 직후', products: [{b: 'Thorne', n: 'Vitamin D3'}, {b: '고려은단', n: '비타민D 2000IU'}] },
+          { id: 'vitc', name: '비타민 C', category: 'Antioxidant', icon: '🍋', dosage: '1,000~3,000mg', desc: '강력한 항산화 작용으로 활성산소로부터 세포를 보호합니다. 콜라겐 합성을 돕고 면역력을 증진시키며, 피로 회복과 피부 건강을 위한 필수 영양제입니다.', pros: ['세포 손상 방지 및 면역력 강화', '콜라겐 합성 지원으로 피부 건강 개선', '철분 흡수 증진 효과'], cons: ['공복 섭취 시 강한 산성으로 속쓰림 유발'], time: '식사 도중 또는 식후 즉시', products: [{b: '고려은단', n: '비타민C 1000'}, {b: 'Doctor\'s Best', n: 'Quali-C'}] },
+          { id: 'vitb', name: '비타민 B군', category: 'Energy', icon: '⚡', dosage: '활성형 1일 1정', desc: '탄수화물, 단백질, 지방을 에너지로 바꾸는 촉매제입니다. 만성 피로와 구내염, 극심한 스트레스 환경에 노출된 현대인에게 즉각적인 활력을 제공합니다.', pros: ['신속한 피로 회복 및 에너지 증진', '신경계 건강 지원 및 스트레스 관리', '피부 및 모발 건강 보조'], cons: ['섭취 후 소변 색이 형광 노란색으로 변함'], time: '아침 식후 즉시', products: [{b: 'Thorne', n: 'B-Complex #12'}, {b: 'GC녹십자', n: '비맥스 메타'}] },
+          { id: 'probio', name: '유산균', category: 'Gut Health', icon: '🦠', dosage: '100억 CFU+', desc: '장내 유익균의 균형을 잡아 배변 활동을 돕고, 면역 세포의 70%가 위치한 장 건강을 지킴으로써 전신 면역력을 향상시킵니다.', pros: ['배변 활동 원활 및 장 건강 개선', '장내 면역 시스템 활성화', '아토피 및 피부 알레르기 완화 보조'], cons: ['초기 가스 참, 복부 팽만감 가능'], time: '기상 직후 공복 또는 식전 30분', products: [{b: '드시모네', n: '4500'}, {b: 'Jarrow Formulas', n: 'EPS'}] },
+          { id: 'lutein', name: '루테인 지아잔틴', category: 'Eye Care', icon: '👁️', dosage: '10~20mg', desc: '스마트 기기 노출이 많은 현대인의 황반 색소 밀도를 유지해 시력 저하를 예방합니다. 루테인뿐만 아니라 중심 시력을 담당하는 지아잔틴이 포함된 복합제를 권장합니다.', pros: ['황반변성 예방 및 시력 보호', '눈의 피로도 완화 및 블루라이트 차단 보조'], cons: ['과다 섭취 시 일시적 피부 황색 변화'], time: '식후 즉시', products: [{b: '안국건강', n: '미니'}, {b: '종근당건강', n: '아이클리어'}] },
+          { id: 'coq10', name: '코엔자임 Q10', category: 'Heart', icon: '❤️', dosage: '100~200mg', desc: '세포 내 미토콘드리아의 에너지 생성을 돕는 핵심 성분입니다. 심장 건강을 지원하고 강력한 항산화 작용을 통해 고혈압 조절과 노화 방지에 도움을 줍니다.', pros: ['심장 활력 증진 및 혈압 감소 도움', '강력한 항산화로 세포 노화 지연', '피부 탄력 개선'], cons: ['늦은 밤 섭취 시 불면 가능성'], time: '아침 또는 점심 식후', products: [{b: 'Doctor\'s Best', n: 'CoQ10'}, {b: '자로우', n: 'Ubiquinol'}] },
+          { id: 'calk2', name: '칼슘 & K2', category: 'Bone', icon: '🦴', dosage: '500mg/100mcg', desc: '칼슘 단독 섭취의 부작용을 막기 위해 비타민 K2가 필수입니다. K2는 혈액 내 칼슘을 뼈로 정확히 이동시켜 혈관 석회화를 막고 골밀도를 높입니다.', pros: ['골밀도 강화 및 골다공증 예방', '혈관 석회화 방지로 심혈관 보호', '치아 건강 유지'], cons: ['와파린 복용자는 K2 섭취 주의'], time: '저녁 식후', products: [{b: 'Life Extension', n: 'Bone Restore'}, {b: 'Jarrow', n: 'Bone-Up'}] },
+          { id: 'sily', name: '실리마린 (밀크씨슬)', category: 'Liver', icon: '🌿', dosage: '130mg 이상', desc: '간 세포를 독소로부터 보호하고 재생을 돕는 성분입니다. 과음, 과로, 스트레스로 지친 간 수치를 개선하고 해독 대사를 원활하게 합니다.', pros: ['간 수치 개선 및 피로 회복 지원', '항산화 효과를 통한 간 세포 보호'], cons: ['국화과 식물 알레르기 보유자 주의'], time: '식후 즉시', products: [{b: 'Thorne', n: 'Siliphos'}, {b: 'Now Foods', n: 'Silymarin'}] },
+          { id: 'argi', name: '아르기닌', category: 'Energy', icon: '💪', dosage: '3,000~5,000mg', desc: '산화질소 생성을 도와 혈관을 확장시키고 혈류량을 증가시킵니다. 운동 수행 능력 향상은 물론 일상의 활력 증진과 남성 건강에 널리 사용됩니다.', pros: ['운동 펌핑 효과 및 근지구력 향상', '혈행 개선을 통한 전신 활력 증진'], cons: ['헤르페스 보유자 주의'], time: '운동 30분 전 또는 아침 공복', products: [{b: 'Now Foods', n: 'Arginine'}, {b: '대상웰라이프', n: '아르포텐'}] },
+          { id: 'msm', name: 'MSM (식이유황)', category: 'Joint', icon: '🛡️', dosage: '2,000~4,000mg', desc: '황 성분을 공급하여 연골을 보호하고 염증을 완화합니다. 관절 통증 개선뿐만 아니라 콜라겐 합성을 도와 피부, 모발, 손톱 건강에도 효과적입니다.', pros: ['관절 및 연골 통증/염증 감소', '피부 결 개선 및 모발 두께 증가', '해독 작용 보조'], cons: ['드물게 상열감 또는 불면 유발'], time: '아침 또는 점심 식후', products: [{b: 'Doctor\'s Best', n: 'MSM'}, {b: '뉴트리코어', n: 'MSM'}] },
+          { id: 'zinc', name: '아연', category: 'Immune', icon: '🛡️', dosage: '15~30mg', desc: '정상적인 면역 기능과 세포 분열에 필수적인 미네랄입니다. 단백질 합성을 돕고 남성 호르몬 대사 및 피부 상처 치유에 중추적인 역할을 합니다.', pros: ['면역력 강화 및 호르몬 균형 유지', '상처 회복 및 미각 유지 도움'], cons: ['고함량 장기 복용 시 구리 결핍 주의'], time: '저녁 식후', products: [{b: 'Thorne Research', n: 'Zinc Picolinate'}, {b: 'Solgar', n: 'Zinc 50mg'}] },
+          { id: 'theanine', name: 'L-테아닌', category: 'Mental', icon: '🍃', dosage: '200~400mg', desc: '녹차의 성분으로 뇌에서 알파파 발생을 유도해 긴장을 완화합니다. 카페인과 함께 섭취 시 불안감은 줄이고 집중력은 유지해주는 독특한 작용을 합니다.', pros: ['스트레스로 인한 긴장 완화', '졸음 없는 집중력 유지', '수면 질 향상'], cons: ['드물게 멍한 기분이 들 수 있음'], time: '긴장될 때 또는 취침 전', products: [{b: 'Now Foods', n: 'Theanine'}, {b: '자로우', n: 'Theanine'}] },
+          { id: 'biotin', name: '비오틴', category: 'Beauty', icon: '💇', dosage: '5,000mcg+', desc: '지방과 탄수화물 대사에 관여하는 수용성 비타민입니다. 모발과 손톱의 주성분인 케라틴 합성을 지원하여 미용 목적의 영양제로 각광받고 있습니다.', pros: ['모발 두께 개선', '부러지는 손톱 강화', '에너지 대사 효율 증진'], cons: ['판토텐산 부족 시 여드름 유발 가능'], time: '식후 즉시', products: [{b: 'Natrol', n: 'Biotin'}, {b: 'Solgar', n: 'Biotin'}] },
+          { id: 'collagen', name: '콜라겐', category: 'Skin', icon: '🌸', dosage: '3,000mg+', desc: '피부, 연골, 혈관 등 신체 조직을 지탱하는 접착제 단백질입니다. 흡수율이 높은 저분자 피쉬 콜라겐을 통해 노화로 감소하는 탄력을 보충할 수 있습니다.', pros: ['피부 탄력 유지 및 보습 지원', '관절 연골 보호 및 골강도 보조'], cons: ['생선 알레르기 보유자 주의'], time: '취침 전 또는 기상 공복', products: [{b: 'Sports Research', n: 'Collagen'}, {b: 'Vital Proteins', n: 'Collagen'}] }
+        ];
+
+        const examineeStack = [
+          { id: 'ex-b', name: '활성형 고함량 비타민 B', category: 'Brain Energy', icon: '💡', dosage: '아침 1정', logic: '수험생의 뇌는 포도당을 주 에너지로 사용합니다. 비타민 B군은 이 대사 과정의 핵심 촉매로 뇌의 피로를 막고 정보 처리 속도를 유지합니다.', pros: ['학습 피로 방지', '집중력 유지'], time: '아침 식후 즉시', caution: '오후 늦게 복용 시 숙면을 방해할 수 있습니다.', products: [{b: 'GC녹십자', n: '비맥스 메타'}, {b: '대웅제약', n: '임팩타민 프리미엄'}] },
+          { id: 'ex-thea', name: 'L-테아닌', category: 'Mental Care', icon: '🍃', dosage: '200~400mg', logic: '시험이나 문제 풀이 시 찾아오는 불안과 잡념을 제거합니다. 뇌를 평온한 알파파 상태로 만들어 차분한 고도의 집중력을 발휘하게 돕습니다.', pros: ['실전 시험 불안 해소', '암기 효율 증진'], time: '자습 시작 30분 전', caution: '과량 섭취 시 머리가 무거워질 수 있으니 200mg부터 시작하세요.', products: [{b: 'Now Foods', n: 'Theanine'}, {b: '안국건강', n: '안심 테아닌'}] },
+          { id: 'ex-lutein', name: '루테인 지아잔틴', category: 'Eye Care', icon: '👁️', dosage: '1일 1정', logic: '장시간 인강과 책을 보는 수험생은 눈의 모양체 근육이 극도로 긴장됩니다. 황반 색소 보충을 통해 눈의 피로도를 낮추는 것이 필수입니다.', pros: ['눈 침침함 개선', '블루라이트 차단 보조'], time: '식후 즉시', caution: '장기 복용 시 비타민 A와의 중복 함량을 체크하세요.', products: [{b: '안국건강', n: '루테인 지아잔틴'}, {b: '종근당건강', n: '아이클리어'}] },
+          { id: 'ex-omega', name: '알티지 오메가3', category: 'Brain Health', icon: '🧠', dosage: 'DHA 500mg+', logic: '기억력의 중추인 DHA를 공급하여 인지 기능을 지원합니다. 혈액 순환을 도와 장시간 앉아있는 수험생의 뇌 영양 전달을 원활하게 합니다.', pros: ['기억력 개선', '안구 건조 방지'], time: '저녁 식후 즉시', caution: '산패 방지를 위해 반드시 PTP 개별 포장 제품을 선택하세요.', products: [{b: '스포츠리서치', n: 'Omega-3'}, {b: '프로메가', n: '알티지'}] }
+        ];
+
+        const advancedSynergies = [
+          { p: ['비타민 D', '비타민 K2', '칼슘'], t: 'Bone', e: '칼슘을 뼈로 정확히 유도해 혈관 석회화를 막습니다.' },
+          { p: ['철분', '비타민 C'], t: 'Absorp', e: '비타민 C가 철분의 산화를 막고 흡수율을 극대화합니다.' },
+          { p: ['글루타치온', '비타민 C/E'], t: 'Antioxidant', e: '비타민 C와 E가 산화된 글루타치온을 다시 환원시켜 효과를 지속시킵니다.' },
+          { p: ['밀크씨슬', '비타민 B군'], t: 'Liver', e: '밀크씨슬이 간을 보호하고 B군이 해독 에너지를 공급합니다.' },
+          { p: ['코큐텐', '오메가3'], t: 'Heart', e: '지용성인 코큐텐이 오메가3의 지방 성분에 녹아 흡수 효율이 극대화됩니다.' },
+          { p: ['MSM', '비타민 C'], t: 'Joint', e: '비타민 C가 콜라겐 합성을 도와 MSM의 연골 재생을 보조합니다.' }
+        ];
+
+        const advancedConflicts = [
+          { p: ['칼슘', '철분'], t: 'Compete', e: '동일 흡수 통로 사용으로 경쟁이 붙어 흡수율이 급감합니다.' },
+          { p: ['카페인', '비타민 B/C'], t: 'Loss', e: '이뇨 작용으로 수용성 비타민이 소변으로 빠르게 배출됩니다.' },
+          { p: ['식이섬유', '모든 영양제'], t: 'Block', e: '강한 흡착력을 가진 식이섬유가 영양 성분을 잡아 배출시킵니다.' },
+          { p: ['항생제', '유산균'], t: 'Survival', e: '항생제는 유산균도 죽이므로 2~3시간 뒤에 섭취하세요.' }
+        ];
+
+        function App() {
+          const [tab, setTab] = useState('encyclopedia');
+          const [expandedIds, setExpandedIds] = useState({});
+
+          const toggleExpand = (id) => setExpandedIds(prev => ({ ...prev, [id]: !prev[id] }));
+          const getLink = (b, n, s) => {
+            const q = encodeURIComponent(`${b} ${n}`);
+            return s === 'cp' ? `https://www.coupang.com/np/search?q=${q}` : `https://www.iherb.com/search?kw=${q}`;
+          };
+
+          useEffect(() => {
+            if (tab === 'qr') {
+              const qrEl = document.getElementById("qrcode");
+              qrEl.innerHTML = "";
+              new QRCode(qrEl, {
+                text: window.location.href,
+                width: 256,
+                height: 256,
+                colorDark : "#0f172a",
+                colorLight : "#ffffff",
+                correctLevel : QRCode.CorrectLevel.H
+              });
+            }
+          }, [tab]);
+
+          return (
+            <div className="app">
+              <header>
+                <div className="logo" onClick={() => setTab('encyclopedia')}>NutriGuide Ultimate</div>
+                <nav>
+                  <ul>
+                    <li><a onClick={() => setTab('encyclopedia')} className={tab === 'encyclopedia' ? 'active' : ''}>📚 영양제 백과</a></li>
+                    <li><a onClick={() => setTab('examinee')} className={tab === 'examinee' ? 'active-examinee' : ''}>🎓 수험생 탭</a></li>
+                    <li><a onClick={() => setTab('combo')} className={tab === 'combo' ? 'active' : ''}>🚀 조합 가이드</a></li>
+                    <li><a onClick={() => setTab('qr')} className={tab === 'qr' ? 'active-qr' : ''}>📱 모바일 연결</a></li>
+                  </ul>
+                </nav>
+              </header>
+
+              <main>
+                <div className={`hero ${tab === 'examinee' ? 'examinee-theme' : tab === 'qr' ? 'qr-theme' : ''}`}>
+                  <h1>
+                    {tab === 'encyclopedia' ? '전체 영양 성분 백과' : 
+                     tab === 'examinee' ? '수험생 필승 영양 전략' :
+                     tab === 'qr' ? '모바일 기기 실시간 연동' : '스마트 스태킹 가이드'}
+                  </h1>
+                  <p>모든 방대한 데이터를 그대로 유지하며 가독성을 극대화했습니다.</p>
+                </div>
+
+                {tab === 'encyclopedia' && (
+                  <div className="tab-content">
+                    <div className="section-header"><h2>📚 17종 상세 정보 라이브러리</h2></div>
+                    <div className="supplement-grid">
+                      {allSupplements.map(s => (
+                        <div key={s.id} className={`card ${expandedIds[s.id] ? 'active' : ''}`} onClick={() => toggleExpand(s.id)}>
+                          <span className="tag tag-blue">{s.category}</span>
+                          <h3>{s.icon} {s.name}</h3>
+                          <div className="dosage-badge">⚖️ 권장: {s.dosage}</div>
+                          <p className="preview-text">{s.desc.substring(0, 65)}...</p>
+                          <div className="details-content">
+                            <p className="description">{s.desc}</p>
+                            <div className="card-inner"><h4>✨ 주요 효능</h4>{s.pros.map((p, i) => <div key={i} className="list-item pros">{p}</div>)}</div>
+                            <div className="card-inner"><h4>⚠️ 주의사항</h4>{s.cons.map((c, i) => <div key={i} className="list-item cons">{c}</div>)}</div>
+                            <div className="info-box">⏰ 섭취 시기: {s.time}</div>
+                            <div className="product-grid">
+                              {s.products.map((p, i) => (
+                                <div key={i} className="product-card" onClick={(e) => e.stopPropagation()}>
+                                  <div className="product-name">{p.b} {p.n}</div>
+                                  <div className="buy-buttons">
+                                    <a href={getLink(p.b, p.n, 'cp')} target="_blank" className="btn btn-cp">쿠팡</a>
+                                    <a href={getLink(p.b, p.n, 'ih')} target="_blank" className="btn btn-ih">iHerb</a>
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {tab === 'examinee' && (
+                  <div className="tab-content">
+                    <div className="section-header"><h2>🎓 수험생 집중력 스택 (4대 핵심)</h2></div>
+                    <div className="supplement-grid">
+                      {examineeStack.map(s => (
+                        <div key={s.id} className={`card examinee-card ${expandedIds[s.id] ? 'active' : ''}`} onClick={() => toggleExpand(s.id)}>
+                          <span className="tag tag-purple">{s.category}</span>
+                          <h3>{s.icon} {s.name}</h3>
+                          <div className="dosage-badge">⚖️ 수험생 권장: {s.dosage}</div>
+                          <p className="preview-text">수험생 학습 전략 및 섭취 논리 확인...</p>
+                          <div className="details-content">
+                            <p className="description" style={{background:'#f5f3ff', padding:'20px', borderRadius:'16px'}}><strong>💡 학습 전략</strong><br/>{s.logic}</p>
+                            <div className="card-inner"><h4>✨ 특화 장점</h4>{s.pros.map((p, i) => <div key={i} className="list-item pros">{p}</div>)}</div>
+                            <div className="info-box" style={{color:'var(--examinee)'}}>⏰ 추천 시기: {s.time}</div>
+                            <div className="caution-box"><strong>🛑 전문가 조언</strong>{s.caution}</div>
+                            <div className="product-grid">
+                              {s.products.map((p, i) => (
+                                <div key={i} className="product-card" onClick={(e) => e.stopPropagation()}>
+                                  <div className="product-name" style={{color:'var(--examinee)'}}>{p.b} {p.n}</div>
+                                  <div className="buy-buttons"><a href={getLink(p.b, p.n, 'cp')} target="_blank" className="btn btn-cp" style={{background:'var(--examinee)'}}>쿠팡 바로구매</a></div>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {tab === 'combo' && (
+                  <div className="tab-content">
+                    <div className="section-header"><h2>🚀 Stacking Strategy (시너지 & 상극)</h2></div>
+                    <div className="combo-container">
+                      <div className="combo-box">
+                        <h3 style={{color: 'var(--success)', marginBottom: '30px', fontSize:'1.5rem'}}>✅ 베스트 시너지 조합</h3>
+                        {advancedSynergies.map((s, i) => (
+                          <div key={i} className="combo-item syn-item">
+                            <span className="combo-title">{s.p.join(' + ')}</span>
+                            <p style={{fontSize: '0.9rem', color: 'var(--text-light)'}}>{s.e}</p>
+                          </div>
+                        ))}
+                      </div>
+                      <div className="combo-box">
+                        <h3 style={{color: 'var(--error)', marginBottom: '30px', fontSize:'1.5rem'}}>❌ 주의가 필요한 상극</h3>
+                        {advancedConflicts.map((c, i) => (
+                          <div key={i} className="combo-item con-item">
+                            <span className="combo-title">{c.p.join(' vs ')}</span>
+                            <p style={{fontSize: '0.9rem', color: 'var(--text-light)'}}>{c.e}</p>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {tab === 'qr' && (
+                  <div className="tab-content">
+                    <div className="qr-container">
+                      <h2>📱 모바일에서 이 가이드를 보세요</h2>
+                      <p style={{color:'var(--text-light)', marginBottom:'20px'}}>스마트폰 카메라로 아래 QR 코드를 스캔하면<br/>언제 어디서든 이 방대한 정보를 확인하실 수 있습니다.</p>
+                      <div id="qrcode"></div>
+                      <p style={{fontSize:'0.85rem', fontWeight:'700'}}>현재 접속 주소:</p>
+                      <div className="qr-url">{window.location.href}</div>
+                      <div className="caution-box" style={{textAlign:'left', background:'#f1f5f9', color:'#475569', border:'none', marginTop:'40px'}}>
+                        <strong>💡 개발자 팁:</strong> 현재 로컬 파일(C: 드라이브 등)에서 열고 계시다면 모바일 연결이 제한될 수 있습니다. 이 파일을 웹 서버(GitHub Pages, Vercel 등)에 올리시면 완벽하게 작동합니다.
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </main>
+
+              <footer>
+                <p>&copy; 2026 NutriGuide Ultimate Edition. 정보 삭제 없는 가이드 시스템.</p>
+              </footer>
+            </div>
+          );
+        }
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
+    </script>
+</body>
+</html>
